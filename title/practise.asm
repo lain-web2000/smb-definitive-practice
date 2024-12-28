@@ -119,6 +119,7 @@ PractiseEnterStage:
     sta FrameCounter                             ;
 	jmp @QuickResume
 @DashOne:
+	inc Hidden1UpFlag
 	lda FrameCounter                             ; we need to offset the frame counter differently for dash one levels
     sbc #5                                       ;
     sta FrameCounter                             ;
@@ -295,11 +296,12 @@ PractiseWriteTopStatusLine:
     inc ScreenRoutineTask                        ; and advance the screen routine task
     rts                                          ; done
 @TopStatusText:                                  ;
-  .byte $20, $43,  21, "RULE x SOCKS TO FRAME"   ;
+  .byte $20, $42,  20, "RULE x F    SOCK Ax "    ;
   .byte $20, $59,   4, "TIME"                    ;
-  .byte $20, $73,   2, $2e, $29                  ; coin that shows next to the coin counter
+  .byte $20, $73,   2, "Bx" 
+  .byte $20, $69,   2, $2e, $29                  ; coin that shows next to the coin counter
   .byte $23, $c0, $7f, $aa                       ; tile attributes for the top row, sets palette
-  .byte $23, $c4, $01, %11100000                 ; set palette for the flashing coin
+  .byte $23, $c2, $01, %10110000                 ; set palette for the flashing coin
 @TopStatusTextEnd:
    .byte $00
 ; ===========================================================================
@@ -326,7 +328,7 @@ ChangeTopStatusXToRemains:
     sta VRAM_Buffer1_Offset                      ; store the new offset
     lda #$20                                     ; write the ppu address to update
     sta VRAM_Buffer1+0, y                        ;
-    lda #$48                                     ;
+    lda #$47                                     ;
     sta VRAM_Buffer1+1, y                        ;
     lda #1                                       ; we are writing a single byte
     sta VRAM_Buffer1+2, y                        ;
@@ -350,7 +352,11 @@ RedrawLowFreqStatusbar:
     iny                                          ;
     sty PendingScoreDrawPosition                 ; and store it as our pending position
     jsr @PrintRule                               ; draw the current framerule value
+	lda StarFlagTaskControl						 ; is the timer counting down at the end of a normal level?
+	cmp #$02									 ; if yes, do not draw frame counter numbers, the vram buffer will cry.
+	beq @NoFC									 ;
     jsr @PrintFramecounter                       ; draw the current framecounter value
+@NoFC:
     ldx ObjectOffset                             ; load object offset, our caller might expect it to be unchanged
     rts                                          ; and exit
 @RefreshBufferX:                                 ;
@@ -371,7 +377,7 @@ RedrawLowFreqStatusbar:
     sta VRAM_Buffer1_Offset                      ; store the ppu location of the framerule counter
     lda #$20                                     ;
     sta VRAM_Buffer1,y                           ;
-    lda #$63                                     ;
+    lda #$62                                     ;
     sta VRAM_Buffer1+1,y                         ;
     lda #$06                                     ; store the number of digits to draw
     sta VRAM_Buffer1+2,y                         ;
@@ -404,7 +410,7 @@ RedrawLowFreqStatusbar:
     sta VRAM_Buffer1_Offset                      ; save new vram offset
     lda #$20                                     ; store the ppu location of the frame number
     sta VRAM_Buffer1,y                           ;
-    lda #$75                                     ;
+    lda #$4a                                     ;
     sta VRAM_Buffer1+1,y                         ;
     lda #$03                                     ; store the number of digits to draw
     sta VRAM_Buffer1+2,y                         ;
@@ -439,49 +445,92 @@ RedrawHighFreqStatusbar:
     ldx #0                                       ; clear X
     lda #$20                                     ; write ppu location of status bar to vram buffer
     sta VRAM_Buffer1+0,x                         ;
-    lda #$6A                                     ;
+    lda #$6E                                     ;
     sta VRAM_Buffer1+1,x                         ;
-    lda #8                                       ; write number of bytes to draw
+    lda #4                                       ; write number of bytes to draw
     sta VRAM_Buffer1+2,x                         ;
-    lda #(8+3)                                   ; and update vram buffer offset to new location
-    sta VRAM_Buffer1_Offset                      ;
-    lda #$24                                     ; write spaces to a couple of locations
-    sta VRAM_Buffer1+3+2,x                       ;
-    sta VRAM_Buffer1+3+5,x                       ;
-    lda #0                                       ; write null terminator
-    sta VRAM_Buffer1+3+8,x                       ;
+    lda #0
+    sta VRAM_Buffer1+3+3,x                       ; and write that byte to the vram buffer
+    sta VRAM_Buffer1+3+4,x                       ; and write that byte to the vram buffer
 
     lda @SockX                                   ; get sockfolder x position
     and #$0F                                     ; mask off the high nibble
-    sta VRAM_Buffer1+3+0,x                       ; and write that byte to the vram buffer
+    sta VRAM_Buffer1+3+1,x                       ; and write that byte to the vram buffer
+	lda @SockX
+	lsr
+	lsr
+	lsr
+	lsr
+	sta VRAM_Buffer1+3+0,x
     lda @SockSubX                                ; get sockfolder subpixel x position
     lsr                                          ; and shift down to the low nibble
     lsr                                          ;
     lsr                                          ;
     lsr                                          ;
-    sta VRAM_Buffer1+3+1,x                       ; and write that byte to the vram buffer
-    lda Player_X_MoveForce                       ; get the current player subpixel
-    tay                                          ; copy to Y
-    and #$0F                                     ; mask off the high nibble
-    sta VRAM_Buffer1+3+4,x ; Y                   ; and write that byte to the vram buffer
-    tya                                          ; restore full value from Y
-    lsr                                          ; and shift down to the low nibble
-    lsr                                          ;
-    lsr                                          ;
-    lsr                                          ;
-    sta VRAM_Buffer1+3+3,x ; Y                   ; and write that byte to the vram buffer
-    lda AreaPointer                              ; get the pointer to where warp pipes direct player
-    tay                                          ; copy to Y
-    and #$0F                                     ; mask off the high nibble
-    sta VRAM_Buffer1+3+7,x ; X                   ; and write that byte to the vram buffer
-    tya                                          ; restore full value from Y
-    lsr                                          ; and shift down to the low nibble
-    lsr                                          ;
-    lsr                                          ;
-    lsr                                          ;
-    sta VRAM_Buffer1+3+6,x ; X                   ; and write that byte to the vram buffer
+    sta VRAM_Buffer1+3+2,x                       ; and write that byte to the vram buffer
+
+    lda DisableScreenFlag                        ; hack!
+    bne @skip
+    lda $00
+    pha
+    lda $01
+    pha
+    ldy #(4+3)                                   ; update vram buffer offset to new location
+    lda #$20                                     ; write ppu location of status bar to vram buffer
+    sta VRAM_Buffer1+0,y                         ;
+    lda #$55                                     ;
+    sta VRAM_Buffer1+1,y                         ;
+    lda #3                                       ; write number of bytes to draw
+    sta VRAM_Buffer1+2,y                         ;
+
+    lda CustomAddressA
+    sta $00
+    lda CustomAddressA+1
+    sta $01
+    ldy #$00
+    lda ($00),y
+    ldy #(4+3)                                   ; update vram buffer offset to new location
+    jsr B10DivBy10
+	sta VRAM_Buffer1+3+2,y
+    txa
+    jsr B10DivBy10
+    sta VRAM_Buffer1+3+1,y                      ; and write that byte to the vram buffer
+    txa
+    sta VRAM_Buffer1+3+0,y                       ; and write that byte to the vram buffer
+
+    ldy #(4+3+3+3)                               ; update vram buffer offset to new location
+    lda #$20                                     ; write ppu location of status bar to vram buffer
+    sta VRAM_Buffer1+0,y                         ;
+    lda #$75                                     ;
+    sta VRAM_Buffer1+1,y                         ;
+    lda #3                                       ; write number of bytes to draw
+    sta VRAM_Buffer1+2,y                         ;
+    lda #(4+3+(3+3)*2)
+    sta VRAM_Buffer1_Offset
+    lda #0                                       ; write null terminator
+    sta VRAM_Buffer1+(4+3+(3+3)*2)               ;
+
+	lda CustomAddressB
+    sta $00
+    lda CustomAddressB+1
+    sta $01
+    ldy #$00
+    lda ($00),y
+    ldy #(4+3+3+3)                               ; update vram buffer offset to new location
+    jsr B10DivBy10
+	sta VRAM_Buffer1+3+2,y
+    txa
+    jsr B10DivBy10
+    sta VRAM_Buffer1+3+1,y                      ; and write that byte to the vram buffer
+    txa
+    sta VRAM_Buffer1+3+0,y                       ; and write that byte to the vram buffer
+    pla
+    sta $01
+    pla
+    sta $00
 @skip:                                           ;
     rts                                          ;
+    
 ; ===========================================================================
 
 

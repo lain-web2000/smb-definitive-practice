@@ -21,7 +21,7 @@ MenuTitles:
 .byte "LEVEL   "
 .byte "P-UP    "
 .byte "HERO    "
-.byte "W9 ON   "
+.byte "WARPS   "
 .byte "RULE    "
 
 ; ppu position to draw each title
@@ -481,8 +481,8 @@ DrawValueString_W9:
 .word @Str0
 .word @Str1
 
-@Str0: .byte " NO"
-@Str1: .byte "YES"
+@Str0: .byte "YES"
+@Str1: .byte "NO"
 ; ===========================================================================
 
 ; pointers to menu values
