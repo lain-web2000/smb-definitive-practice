@@ -813,9 +813,7 @@ PracticeTitleMenu:
 @check_b:
 		cmp #B_Button
 		beq @sq
-		cmp #A_Button
 		bne @check_input
-		jsr toggle_rng_offset
 		jmp @dec_timer
 @sq:
 		jsr toggle_second_quest
@@ -1492,6 +1490,8 @@ ProcessLevelLoad:
 		lda CompletedWorlds
 		cmp #$ff
 		bne @done
+		lda IsPlayingExtendedWorlds
+		beq @done
 		lda WorldNumber								 ;
 		cmp #World7									 ; Are we in World 7 or 8?
 		beq @World7Setup							 ; If yes, go and check the area number

@@ -524,7 +524,8 @@ ExEWA:
 EndWorld1Thru7:
            lda WorldEndTimer         ;skip this until world end timer expires
            bne EndExit
-NextWorld: lda #$00
+NextWorld: PF_SetToLevelEnd_A
+		   lda #$00
            sta AreaNumber            ;reset area/level numbers to start the next world
            sta LevelNumber
            sta OperMode_Task
@@ -4130,6 +4131,7 @@ NotEndW:  jsr Enter_LL_LoadAreaPointer    ;get new level pointer
           inc FetchNewGameTimerFlag ;set flag to load new game timer
           jsr ChgAreaMode           ;do sub to set secondary mode, disable screen and IRQ
           sta HalfwayPage           ;reset halfway page to 0 (beginning)
+		  PF_SetToLevelEnd_A
           lda #Silence
           sta EventMusicQueue       ;silence music and leave
 ExitNA:   rts
@@ -13586,6 +13588,7 @@ StartTheGame:
          jsr Enter_LL_LoadAreaPointer    ;update area pointer for world 1-1
          inc Hidden1UpFlag
          inc FetchNewGameTimerFlag
+		 inc WRAM_FetchNewGameTimerFlag
          inc OperMode
          lda #$00
          sta DiskIOTask
