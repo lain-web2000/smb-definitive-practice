@@ -926,6 +926,7 @@ GameTextLoop:  lda GameText,x            ;load game text data
                bne GameTextLoop          ;do this for 256 bytes if no terminator found
 EndGameText:   lda #$00                  ;put null terminator at end
                sta VRAM_Buffer1,y
+			   sty VRAM_Buffer1_Offset
                pla                       ;pull original text number from stack
                beq CheckPlayerName       ;if printing top status bar, branch to check player's name
                tax
