@@ -1490,18 +1490,16 @@ ProcessLevelLoad:
 		lda CompletedWorlds
 		cmp #$ff
 		bne @done
-		lda IsPlayingExtendedWorlds
+		lda HardWorldFlag
 		beq @done
 		lda WorldNumber								 ;
 		cmp #World7									 ; Are we in World 7 or 8?
 		beq @World7Setup							 ; If yes, go and check the area number
 		cmp #World8									 ; 
 		beq @World8Setup							 ; 
-		cmp #World3									 ; Are we in World C? (ignore the label please)
+		cmp #$0b									 ; Are we in World C? (sorgy no label)
 		bne @done								 	 ; No? Leave.
 @WorldCSetup:									 	 ;
-		lda HardWorldFlag							 ; Is this C-1 or 3-1?
-		beq @done									 ; get the hell out of here, 3-1 doesn't have a wrong warp.
 		lda LevelNumber								 ; Are we in C-1?
 		bne @done								 	 ; No? THEN PLEASE LEAVE I DID NOT INVITE YOU.
 		lda #$0E									 ;
